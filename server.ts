@@ -54,9 +54,22 @@ async function startServer() {
       try {
         if (fs.existsSync(distPath)) {
           const files = fs.readdirSync(distPath);
-          console.log(`[DIAGNOSTIC] SUCCESS: 'dist' folder found. Contents: ${files.slice(0, 10).join(', ')}${files.length > 10 ? '...' : ''}`);
+          console.log(`[DIAGNOSTIC] SUCCESS: 'dist' folder found. Contents: ${files.join(', ')}`);
+          
+          const assetsPath = path.join(distPath, 'assets');
+          if (fs.existsSync(assetsPath)) {
+            const assetFiles = fs.readdirSync(assetsPath);
+            console.log(`[DIAGNOSTIC] SUCCESS: 'dist/assets' found. Contents: ${assetFiles.slice(0, 10).join(', ')}${assetFiles.length > 10 ? '...' : ''}`);
+          } else {
+            console.error("[DIAGNOSTIC] ERROR: 'dist/assets' folder is MISSING!");
+          }
+
           if (fs.existsSync(indexPath)) {
             console.log("[DIAGNOSTIC] SUCCESS: 'dist/index.html' found.");
+            // Log a snippet of index.html to see script tags
+            const html = fs.readFileSync(indexPath, 'utf8');
+            const scriptMatch = html.match(/<script.*src="([^"]+)".*>/);
+            console.log(`[DIAGNOSTIC] index.html script tag: ${scriptMatch ? scriptMatch[0] : 'NOT FOUND'}`);
           } else {
             console.error("[DIAGNOSTIC] ERROR: 'dist/index.html' is MISSING in dist folder!");
           }
