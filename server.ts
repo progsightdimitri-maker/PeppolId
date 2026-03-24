@@ -37,9 +37,27 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
+    const indexPath = path.join(distPath, 'index.html');
+    
+    console.log(`Production mode: Serving assets from ${distPath}`);
+    
+    // Check if dist exists
+    import('fs').then(fs => {
+      if (fs.existsSync(distPath)) {
+        console.log("Directory 'dist' exists");
+        if (fs.existsSync(indexPath)) {
+          console.log("'dist/index.html' exists");
+        } else {
+          console.warn("'dist/index.html' is MISSING!");
+        }
+      } else {
+        console.error("Directory 'dist' is MISSING! Make sure to run 'npm run build' before starting the server.");
+      }
+    });
+
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+      res.sendFile(indexPath);
     });
   }
 
