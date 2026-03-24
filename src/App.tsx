@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import Papa from 'papaparse';
-import { Upload, FileDown, Search, AlertCircle, CheckCircle2, Loader2, XCircle } from 'lucide-react';
+import { Upload, FileDown, Search, AlertCircle, CheckCircle2, Loader2, XCircle, LogOut, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,6 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAuth } from './contexts/AuthContext';
+import LoginPage from './components/LoginPage';
+import ProtectedRoute from './components/ProtectedRoute';
 
 interface CsvRow {
   vatNumber: string;
@@ -27,7 +31,7 @@ interface ProcessedResult {
   errorMessage?: string;
 }
 
-export default function App() {
+function Dashboard() {
   const [file, setFile] = useState<File | null>(null);
   const [results, setResults] = useState<ProcessedResult[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -35,6 +39,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isCancelledRef = useRef<boolean>(false);
+  const { user, logout } = useAuth();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -75,8 +80,6 @@ export default function App() {
           return;
         }
 
-        // Assuming VAT numbers are in the first column
-        // Skip header if the first row looks like a header
         let startIndex = 0;
         const firstCell = data[0][0]?.trim().toLowerCase();
         if (firstCell === 'vat' || firstCell === 'tva' || firstCell === 'vat number' || firstCell === 'numero de tva') {
@@ -99,7 +102,6 @@ export default function App() {
 
         setResults(initialResults);
 
-        // Process sequentially to avoid rate limiting
         for (let i = 0; i < vatNumbers.length; i++) {
           if (isCancelledRef.current) {
             break;
@@ -108,7 +110,6 @@ export default function App() {
           const vat = vatNumbers[i];
           
           try {
-            // Clean the VAT number for search: remove spaces and 'BE' prefix
             let cleanedVat = vat.replace(/\s+/g, '');
             if (cleanedVat.toUpperCase().startsWith('BE')) {
               cleanedVat = cleanedVat.substring(2);
@@ -160,8 +161,6 @@ export default function App() {
           }
           
           setProgress(Math.round(((i + 1) / vatNumbers.length) * 100));
-          
-          // Small delay to be polite to the API
           await new Promise(resolve => setTimeout(resolve, 300));
         }
         
@@ -246,10 +245,31 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8 flex flex-col">
       <div className="max-w-7xl mx-auto space-y-6 flex-1 w-full flex flex-col">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 flex-none">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 flex-none border-b pb-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">Peppol Directory Lookup</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900 leading-tight">Peppol Directory Lookup</h1>
             <p className="text-gray-500 mt-1">Upload a CSV of VAT numbers to find their Peppol Participant IDs.</p>
+          </div>
+          
+          <div className="flex items-center gap-4 bg-white p-3 rounded-lg shadow-sm border">
+            <div className="flex items-center gap-2">
+              <div className="bg-primary/10 p-1.5 rounded-full">
+                <UserIcon className="w-4 h-4 text-primary" />
+              </div>
+              <span className="text-sm font-medium text-gray-700 max-w-[150px] truncate">
+                {user?.email}
+              </span>
+            </div>
+            <div className="w-px h-6 bg-gray-200" />
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={logout}
+              className="text-gray-500 hover:text-red-600 hover:bg-red-50"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Déconnexion
+            </Button>
           </div>
         </div>
 
@@ -423,5 +443,21 @@ export default function App() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route 
+        path="/" 
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } 
+      />
+    </Routes>
   );
 }
