@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
+    "postinstall": "npm run build",
     "deploy": "git add . && (git commit -m 'Updates' || true) && git push -u origin main"
   },
   "dependencies": {

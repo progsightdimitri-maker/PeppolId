@@ -39,24 +39,36 @@ async function startServer() {
     const distPath = path.join(process.cwd(), 'dist');
     const indexPath = path.join(distPath, 'index.html');
     
-    console.log(`Production mode: Serving assets from ${distPath}`);
+    console.log(`[DIAGNOSTIC] Current working directory (cwd): ${process.cwd()}`);
+    console.log(`[DIAGNOSTIC] __dirname: ${path.dirname(new URL(import.meta.url).pathname)}`);
+    console.log(`[DIAGNOSTIC] Attempting to serve assets from: ${distPath}`);
     
-    // Check if dist exists
+    // Check if dist exists and list its contents
     import('fs').then(fs => {
-      if (fs.existsSync(distPath)) {
-        console.log("Directory 'dist' exists");
-        if (fs.existsSync(indexPath)) {
-          console.log("'dist/index.html' exists");
+      try {
+        if (fs.existsSync(distPath)) {
+          const files = fs.readdirSync(distPath);
+          console.log(`[DIAGNOSTIC] 'dist' folder exists. Contents: ${files.join(', ')}`);
+          if (fs.existsSync(indexPath)) {
+            console.log("[DIAGNOSTIC] 'dist/index.html' found.");
+          } else {
+            console.error("[DIAGNOSTIC] 'dist/index.html' is MISSING!");
+          }
         } else {
-          console.warn("'dist/index.html' is MISSING!");
+          console.error("[DIAGNOSTIC] 'dist' folder is MISSING! Listing root directory instead:");
+          const rootFiles = fs.readdirSync(process.cwd());
+          console.log(`[DIAGNOSTIC] Root contents: ${rootFiles.join(', ')}`);
         }
-      } else {
-        console.error("Directory 'dist' is MISSING! Make sure to run 'npm run build' before starting the server.");
+      } catch (err) {
+        console.error("[DIAGNOSTIC] Error while checking directories:", err);
       }
     });
 
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
+      if (req.path.startsWith('/assets/')) {
+        console.warn(`[DIAGNOSTIC] Asset not found in static middleware, falling back to index.html for: ${req.path}`);
+      }
       res.sendFile(indexPath);
     });
   }
