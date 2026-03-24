@@ -1,6 +1,10 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
@@ -36,38 +40,44 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
+    // In production, we serve from the 'dist' directory
+    // We check both relative to cwd and relative to __dirname (which is in the root for server.ts)
+    const distPath = path.resolve(__dirname, 'dist');
     const indexPath = path.join(distPath, 'index.html');
     
-    console.log(`[DIAGNOSTIC] Current working directory (cwd): ${process.cwd()}`);
-    console.log(`[DIAGNOSTIC] __dirname: ${path.dirname(new URL(import.meta.url).pathname)}`);
-    console.log(`[DIAGNOSTIC] Attempting to serve assets from: ${distPath}`);
+    console.log(`[DIAGNOSTIC] Environment: PRODUCTION`);
+    console.log(`[DIAGNOSTIC] process.cwd(): ${process.cwd()}`);
+    console.log(`[DIAGNOSTIC] __dirname: ${__dirname}`);
+    console.log(`[DIAGNOSTIC] Expected distPath: ${distPath}`);
     
-    // Check if dist exists and list its contents
     import('fs').then(fs => {
       try {
         if (fs.existsSync(distPath)) {
           const files = fs.readdirSync(distPath);
-          console.log(`[DIAGNOSTIC] 'dist' folder exists. Contents: ${files.join(', ')}`);
+          console.log(`[DIAGNOSTIC] SUCCESS: 'dist' folder found. Contents: ${files.slice(0, 10).join(', ')}${files.length > 10 ? '...' : ''}`);
           if (fs.existsSync(indexPath)) {
-            console.log("[DIAGNOSTIC] 'dist/index.html' found.");
+            console.log("[DIAGNOSTIC] SUCCESS: 'dist/index.html' found.");
           } else {
-            console.error("[DIAGNOSTIC] 'dist/index.html' is MISSING!");
+            console.error("[DIAGNOSTIC] ERROR: 'dist/index.html' is MISSING in dist folder!");
           }
         } else {
-          console.error("[DIAGNOSTIC] 'dist' folder is MISSING! Listing root directory instead:");
+          console.error("[DIAGNOSTIC] ERROR: 'dist' folder NOT found at expected path.");
+          // Try to find it anywhere in root
           const rootFiles = fs.readdirSync(process.cwd());
           console.log(`[DIAGNOSTIC] Root contents: ${rootFiles.join(', ')}`);
         }
       } catch (err) {
-        console.error("[DIAGNOSTIC] Error while checking directories:", err);
+        console.error("[DIAGNOSTIC] Unexpected error during startup checks:", err);
       }
     });
 
     app.use(express.static(distPath));
+    
+    // Fallback for SPA routing
     app.get('*', (req, res) => {
+      // Log only the first few requests to avoid flooding
       if (req.path.startsWith('/assets/')) {
-        console.warn(`[DIAGNOSTIC] Asset not found in static middleware, falling back to index.html for: ${req.path}`);
+        console.warn(`[DIAGNOSTIC] Asset requested but not found by static provider: ${req.path}`);
       }
       res.sendFile(indexPath);
     });
