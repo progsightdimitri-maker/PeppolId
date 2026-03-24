@@ -35,7 +35,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider value={{ user, loading, logout }}>
-      {!loading && children}
+      {loading ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', fontFamily: 'sans-serif' }}>
+          <div style={{ textAlign: 'center' }}>
+            <p>Loading application...</p>
+            <p style={{ fontSize: '0.8rem', color: '#666' }}>Initializing Firebase Auth</p>
+          </div>
+        </div>
+      ) : children}
     </AuthContext.Provider>
   );
 };
