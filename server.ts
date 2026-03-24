@@ -107,6 +107,13 @@ async function startServer() {
           }
         } catch (e) {}
       }
+      
+      // Disable caching for index.html to avoid hash mismatch issues
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.setHeader('Surrogate-Control', 'no-store');
+      
       res.sendFile(indexPath);
     });
   }
