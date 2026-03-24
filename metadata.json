@@ -1,0 +1,5 @@
+{
+  "name": "Peppol Directory Lookup",
+  "description": "Upload a CSV of VAT numbers to find their Peppol Participant IDs.",
+  "requestFramePermissions": []
+}
