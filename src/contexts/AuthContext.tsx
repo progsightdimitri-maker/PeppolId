@@ -15,9 +15,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log("AuthProvider: Setting up onAuthStateChanged");
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log("AuthProvider: Auth state changed, user:", user?.email || "none");
       setUser(user);
       setLoading(false);
     });
@@ -35,14 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider value={{ user, loading, logout }}>
-      {loading ? (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', fontFamily: 'sans-serif' }}>
-          <div style={{ textAlign: 'center' }}>
-            <p>Loading application...</p>
-            <p style={{ fontSize: '0.8rem', color: '#666' }}>Initializing Firebase Auth</p>
-          </div>
-        </div>
-      ) : children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };

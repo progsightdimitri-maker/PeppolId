@@ -46,68 +46,10 @@ async function startServer() {
     const distPath = path.resolve(__dirname, 'dist');
     const indexPath = path.join(distPath, 'index.html');
     
-    console.log(`[DIAGNOSTIC] Environment: PRODUCTION`);
-    console.log(`[DIAGNOSTIC] process.cwd(): ${process.cwd()}`);
-    console.log(`[DIAGNOSTIC] __dirname: ${__dirname}`);
-    console.log(`[DIAGNOSTIC] Expected distPath: ${distPath}`);
-    
-    try {
-      if (fs.existsSync(distPath)) {
-        const files = fs.readdirSync(distPath);
-        console.log(`[DIAGNOSTIC] SUCCESS: 'dist' folder found. Contents: ${files.join(', ')}`);
-        
-        const assetsPath = path.join(distPath, 'assets');
-        if (fs.existsSync(assetsPath)) {
-          const assetFiles = fs.readdirSync(assetsPath);
-          console.log(`[DIAGNOSTIC] SUCCESS: 'dist/assets' found. Contents: ${assetFiles.slice(0, 10).join(', ')}${assetFiles.length > 10 ? '...' : ''}`);
-        } else {
-          console.error("[DIAGNOSTIC] ERROR: 'dist/assets' folder is MISSING!");
-        }
-
-        if (fs.existsSync(indexPath)) {
-          console.log("[DIAGNOSTIC] SUCCESS: 'dist/index.html' found.");
-          // Log a snippet of index.html to see script tags
-          const html = fs.readFileSync(indexPath, 'utf8');
-          const scriptMatch = html.match(/<script.*src="([^"]+)".*>/);
-          console.log(`[DIAGNOSTIC] index.html script tag: ${scriptMatch ? scriptMatch[0] : 'NOT FOUND'}`);
-        } else {
-          console.error("[DIAGNOSTIC] ERROR: 'dist/index.html' is MISSING in dist folder!");
-        }
-      } else {
-        console.error("[DIAGNOSTIC] ERROR: 'dist' folder NOT found at expected path.");
-        // Try to find it anywhere in root
-        const rootFiles = fs.readdirSync(process.cwd());
-        console.log(`[DIAGNOSTIC] Root contents: ${rootFiles.join(', ')}`);
-      }
-    } catch (err) {
-      console.error("[DIAGNOSTIC] Unexpected error during startup checks:", err);
-    }
-
     app.use(express.static(distPath));
     
     // Fallback for SPA routing
     app.get('*', (req, res) => {
-      const isAsset = req.path.startsWith('/assets/');
-      if (isAsset) {
-        console.warn(`[DIAGNOSTIC] Asset NOT FOUND by static provider: ${req.path}`);
-        // List assets directory again to be sure
-        try {
-          if (fs.existsSync(path.join(distPath, 'assets'))) {
-            const currentAssets = fs.readdirSync(path.join(distPath, 'assets'));
-            console.log(`[DIAGNOSTIC] Current assets on disk: ${currentAssets.join(', ')}`);
-          }
-        } catch (e) {}
-      } else {
-        // Log what we are serving as index.html
-        try {
-          if (fs.existsSync(indexPath)) {
-            const html = fs.readFileSync(indexPath, 'utf8');
-            const scriptMatch = html.match(/<script.*src="([^"]+)".*>/);
-            console.log(`[DIAGNOSTIC] Serving index.html. Script tag found: ${scriptMatch ? scriptMatch[1] : 'NONE'}`);
-          }
-        } catch (e) {}
-      }
-      
       // Disable caching for index.html to avoid hash mismatch issues
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.setHeader('Pragma', 'no-cache');

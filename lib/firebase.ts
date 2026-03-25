@@ -11,15 +11,9 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-console.log("Initializing Firebase with config:", {
-  ...firebaseConfig,
-  apiKey: firebaseConfig.apiKey ? "***" : "MISSING"
-});
-
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-console.log("Firebase Auth initialized");
 
 export { auth };
 export default app;
